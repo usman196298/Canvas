@@ -1,0 +1,33 @@
+#navbar {
+  background-color: black !important;
+  justify-content: center;
+  height: 60px;
+} 
+
+#divider {
+  background-color: white;
+  width: 2px;
+}
+
+#canvas {
+  float: left;
+  margin-left: 60px;
+}
+
+/* #packages {
+  float: right;
+  width: 20%;
+  background-color: lightgray;
+  margin-left: 60px;
+  margin-right: 30px;
+}
+
+#packages-head {
+  float: left;
+  margin-left: 25px;
+}
+
+#package-content {
+  float: right;
+  margin-right: 20px;
+} */
