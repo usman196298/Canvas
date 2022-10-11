@@ -43,7 +43,7 @@ function Canvas() {
     width: 800,
     height: 600,
     backgroundImage:(cvs),
-    selection: true
+    selection: true,
   })
   // fabric.Object.prototype.selectable = true
   return canvas1
@@ -108,6 +108,9 @@ function Canvas() {
     setCanvas(canvas=> initCanvas());
   }
 
+  function addDrawing() {
+    canvas.isDrawingMode(true);
+  }
 
   return (
     <div>
@@ -160,7 +163,7 @@ function Canvas() {
 
 
             <IconButton size="small" edge="start" color="inherit" sx={{ mr: 1, ml: 2 }}>
-              <CreateIcon/>
+              <CreateIcon onClick={addDrawing}/>
             </IconButton>
 
             <IconButton size="small" edge="start" color="inherit" sx={{ mr: 1 }}>
