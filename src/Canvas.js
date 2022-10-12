@@ -1,7 +1,9 @@
 import React from 'react'
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+
 import cvs from './cvs.jpg'
 import { fabric } from 'fabric'
+import {useMount} from "./custom-hooks"
 import { AppBar,Toolbar, IconButton, Button } from '@mui/material';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
@@ -16,53 +18,51 @@ import LoyaltyIcon from '@mui/icons-material/Loyalty';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PrintIcon from '@mui/icons-material/Print';
-
+import html2canvas from "html2canvas";
+import jsPdf from "jspdf";
+import { PanoramaPhotosphereRounded } from '@mui/icons-material';
 
 function Canvas() {
   
-  const  [canvas, setCanvas] = useState(null);
-  
-  useEffect(() => {
-    setCanvas(initCanvas());
-  },[])
+  const  [canvas, setCanvas] = useState('');
 
-  useEffect(()=>{
-    if(canvas){
-      fabric.Object.prototype.selectable = true
-      fabric.util.requestAnimFrame(function render() {
-        //canvas.renderAll();
-        fabric.util.requestAnimFrame(render);
-      });
-      canvas.requestRenderAll()
-    }
-  },[canvas])
-  
+  var redo =[];
+  var undo =[];
+  // var json ='';
 
-  const initCanvas = () => { 
-    const canvas1 = new fabric.Canvas("canvas", {
-    width: 800,
-    height: 600,
-    backgroundImage:(cvs),
-    selection: true,
+  // useEffect(() => {
+  //     setCanvas(initCanvas);
+  // },[])
+  
+  
+  // To stop double rendering
+  useMount(()=>{
+    setCanvas(initCanvas);
   })
-  // fabric.Object.prototype.selectable = true
-  return canvas1
-};
-    
-// fabric.Canvas(canvasElement, {
-//   selection: true
-// });
 
+  const initCanvas = () => new fabric.Canvas("canvas", {
+      width: 800,
+      height: 600,
+      backgroundImage:(cvs),
+    });
+
+    
   function addtext(){
+    canvas.isDrawingMode=false;
     var textEditable = new fabric.Textbox(
       'Editable Textbox', {
       width: 500,
       editable: true
     });
     canvas.add(textEditable);
+
+    var json = canvas.toJSON();
+    undo.push(json.objects[(json.objects.length)-1]);
+    redo = [];
   }
 
   function addcircle() {
+    canvas.isDrawingMode=false;
     var circle = new fabric.Circle({
       top:100,
       left:100,
@@ -72,45 +72,148 @@ function Canvas() {
       strokeWidth: 2
   });
     canvas.add(circle);
+
+    var json = canvas.toJSON();
+    undo.push(json.objects[(json.objects.length)-1]);
   }
 
   function addrectangle() {
-  var rect = new fabric.Rect({
-    left: 150,
-    top: 100,
-    fill: 'red' ,
-    stroke: 'black',
-    width: 200,
-    height: 100
-  });
+    canvas.isDrawingMode=false;
+    var rect = new fabric.Rect({
+      left: 150,
+      top: 100,
+      fill: 'red' ,
+      stroke: 'black',
+      width: 200,
+      height: 100
+    });
     canvas.add(rect);
+
+    var json = canvas.toJSON();
+    undo.push(json.objects[(json.objects.length)-1]);
   }
 
   function addline() {
-  var line = new fabric.Line([50, 10, 200, 150], {
-    stroke: 'green'
-  });
-  canvas.add(line);
+    canvas.isDrawingMode=false;
+    var line = new fabric.Line([50, 10, 200, 150], {
+      stroke: 'green'
+    });
+    canvas.add(line);
+
+    var json = canvas.toJSON();
+    undo.push(json.objects[(json.objects.length)-1]);
   }
 
   function addZoomin() {
+    canvas.isDrawingMode=false;
     canvas.setZoom(canvas.getZoom() * 1.1 );
     // canvas.zoomToPoint(new fabric.Point(canvas.width / 2, canvas.height / 2), canvas.getZoom() * 1.1);
   }
 
   function addZoomout() {
+    canvas.isDrawingMode=false;
     canvas.setZoom(canvas.getZoom() / 1.1 );
     // canvas.zoomToPoint(new fabric.Point(canvas.width / 2, canvas.height / 2), canvas.getZoom() / 1.1);
   }
 
   function addDelete() {
+    canvas.isDrawingMode=false;
     alert("Canvas will be clear out !");
-    setCanvas(canvas=> initCanvas());
+    
+    canvas.remove.apply(canvas, canvas.getObjects().concat());
+
+    // setCanvas(initCanvas);
+
+    // var json = canvas.toJSON();
+    // canvas.clear();
+    // canvas.loadFromJSON(json, canvas.renderAll.bind(canvas));
+  }
+
+  function addSpecificDelete() {
+    canvas.isDrawingMode=false;
+    alert("Selected item will be deleted");
+    canvas.remove(canvas.getActiveObject());
   }
 
   function addDrawing() {
-    canvas.isDrawingMode(true);
+    canvas.isDrawingMode=true;
   }
+
+  function addPdf() {
+    alert('Exporting to print/pdf');
+    const domElement = document.getElementById("canvas");
+    html2canvas(domElement, {
+    }).then(canvas => {
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPdf();
+      pdf.addImage(imgData, "JPEG", 0, 0);
+      pdf.save(`${new Date().toISOString()}.pdf`);
+    });
+  }
+
+  //
+  // function maintainState()
+  // {
+  //   json = canvas.toJSON();
+  //   undo.push(json.objects[(json.objects.length)-1]);
+  //   redo = [];
+  // }
+  
+  function doRedo() {
+    //redo pop undo push
+    if(redo.length>0) {
+    var popper = redo.pop();
+    undo.push(popper);
+  
+    fabric.util.enlivenObjects(undo, function(objects) {
+      var origRenderOnAddRemove = canvas.renderOnAddRemove;
+      canvas.renderOnAddRemove = false;
+   
+      objects.forEach(function(o) {
+         canvas.add(o);
+      });
+   
+      canvas.renderOnAddRemove = origRenderOnAddRemove;
+      canvas.renderAll();
+   });
+
+
+   console.log("Redo:",redo);
+   console.log("Undo:",undo);
+    }
+    else {
+      alert("You are not allowed to do Redo!")
+    }
+    //redo.pop();
+    //debugger;
+  }
+
+  function doUndo() {
+    //undo pop redo push
+    var popper1 = undo.pop();
+    redo.push(popper1);
+
+    canvas.remove.apply(canvas, canvas.getObjects().concat());
+
+    fabric.util.enlivenObjects(undo, function(objects) {
+      var origRenderOnAddRemove = canvas.renderOnAddRemove;
+      canvas.renderOnAddRemove = false;
+   
+      objects.forEach(function(o) {
+         canvas.add(o);
+      });
+   
+      canvas.renderOnAddRemove = origRenderOnAddRemove;
+      canvas.renderAll();
+   });
+
+   console.log("Undo:",undo);
+   console.log("Redo:",redo);
+
+    //undo.pop();
+    //debugger;
+  }
+
 
   return (
     <div>
@@ -129,11 +232,11 @@ function Canvas() {
             </div>
 
             <IconButton size="small" edge="start" color="inherit" sx={{ mr: 1, ml: 2  }}>
-              <UndoIcon/>
+              <UndoIcon onClick={doUndo}/>
             </IconButton>
 
             <IconButton size="small" edge="start" color="inherit" sx={{ mr: 2 }}>
-              <RedoIcon/>
+              <RedoIcon onClick={doRedo}/>
             </IconButton>
 
             <div id="divider">
@@ -167,7 +270,7 @@ function Canvas() {
             </IconButton>
 
             <IconButton size="small" edge="start" color="inherit" sx={{ mr: 1 }}>
-              <LoyaltyIcon/>
+              <LoyaltyIcon onClick={addSpecificDelete}/>
             </IconButton>
 
             <IconButton size="small" edge="start" color="inherit" sx={{ mr: 2 }}>
@@ -180,11 +283,11 @@ function Canvas() {
 
 
             <IconButton size="small" edge="start" color="inherit" sx={{ mr: 1, ml: 2 }}>
-              <OpenInNewIcon/>
+              <OpenInNewIcon onClick={addPdf}/>
             </IconButton>            
 
             <IconButton size="small" edge="start" color="inherit" sx={{ mr: 110 }}>
-              <PrintIcon/>
+              <PrintIcon onClick={addPdf}/>
             </IconButton>       
 
 
@@ -198,9 +301,7 @@ function Canvas() {
 
         </Toolbar>
       </AppBar>
-   
-      <canvas id="canvas" />
-
+      <canvas id={"canvas"} />
     </div>
   )
 }
