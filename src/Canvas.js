@@ -1,10 +1,13 @@
 import React from 'react'
 import { useEffect, useState, useRef } from 'react';
+import './style.css'
 
 import cvs from './cvs.jpg'
 import { fabric } from 'fabric'
 import {useMount} from "./custom-hooks"
-import { AppBar,Toolbar, IconButton, Button } from '@mui/material';
+import MyPopover from './MyPopover';
+
+import { AppBar,Toolbar, IconButton, Button, Popover } from '@mui/material';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import UndoIcon from '@mui/icons-material/Undo';
@@ -20,21 +23,40 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PrintIcon from '@mui/icons-material/Print';
 import html2canvas from "html2canvas";
 import jsPdf from "jspdf";
-import { PanoramaPhotosphereRounded } from '@mui/icons-material';
+
+import Typography from '@mui/material/Typography';
+
+import Popper from '@mui/material/Popper';
+import PopupState, { bindToggle, bindPopper } from 'material-ui-popup-state';
+import Fade from '@mui/material/Fade';
+import Paper from '@mui/material/Paper';
+
+// import { PanoramaPhotosphereRounded } from '@mui/icons-material';
+// import Popper, { PopperPlacementType } from '@mui/material/Popper';
+// import Typography from '@mui/material/Typography';
+// import Popover from '@mui/material/Popover';
+
+  
 
 function Canvas() {
   
   const  [canvas, setCanvas] = useState('');
 
-  var redo =[];
-  var undo =[];
-  // var json ='';
+  // var redo =[];
+  // var undo =[];
+
+  var array= [];
+  var currentIndex= -1;
+  var count=0;
+  var json ='';
+
+  console.log("Initial Index: ", currentIndex);
 
   // useEffect(() => {
   //     setCanvas(initCanvas);
   // },[])
   
-  
+
   // To stop double rendering
   useMount(()=>{
     setCanvas(initCanvas);
@@ -43,7 +65,7 @@ function Canvas() {
   const initCanvas = () => new fabric.Canvas("canvas", {
       width: 800,
       height: 600,
-      backgroundImage:(cvs),
+      backgroundImage:(cvs)
     });
 
     
@@ -56,9 +78,10 @@ function Canvas() {
     });
     canvas.add(textEditable);
 
-    var json = canvas.toJSON();
-    undo.push(json.objects[(json.objects.length)-1]);
-    redo = [];
+    textEditable.on('mousedown', function(options) {
+      console.log("Text Selected: ", options.target);
+    });
+    maintainState();
   }
 
   function addcircle() {
@@ -72,9 +95,13 @@ function Canvas() {
       strokeWidth: 2
   });
     canvas.add(circle);
+    circle.on('mousedown', function(options) {
+      // adjustColor(circle.fill, circle.stroke);
+      showPopover();
+      console.log("Circle Selected: ", options.target);
+    });
 
-    var json = canvas.toJSON();
-    undo.push(json.objects[(json.objects.length)-1]);
+    maintainState();
   }
 
   function addrectangle() {
@@ -88,9 +115,16 @@ function Canvas() {
       height: 100
     });
     canvas.add(rect);
+    // console.log("color: ",rect.fill)
+    // console.log("stroke: ",rect.stroke)
 
-    var json = canvas.toJSON();
-    undo.push(json.objects[(json.objects.length)-1]);
+    rect.on('mousedown', function(options) {
+      console.log("Rectangle Selected: ", options.target);   
+    });
+
+    // adjustColor();
+
+    maintainState();
   }
 
   function addline() {
@@ -100,8 +134,12 @@ function Canvas() {
     });
     canvas.add(line);
 
-    var json = canvas.toJSON();
-    undo.push(json.objects[(json.objects.length)-1]);
+    line.on('mousedown', function(options) {
+
+      console.log("Line Selected: ", options.target);
+    });
+
+    maintainState();
   }
 
   function addZoomin() {
@@ -123,7 +161,6 @@ function Canvas() {
     canvas.remove.apply(canvas, canvas.getObjects().concat());
 
     // setCanvas(initCanvas);
-
     // var json = canvas.toJSON();
     // canvas.clear();
     // canvas.loadFromJSON(json, canvas.renderAll.bind(canvas));
@@ -132,11 +169,18 @@ function Canvas() {
   function addSpecificDelete() {
     canvas.isDrawingMode=false;
     alert("Selected item will be deleted");
+    console.log("Delete Active on: ",canvas.getActiveObject());
     canvas.remove(canvas.getActiveObject());
   }
 
+
   function addDrawing() {
     canvas.isDrawingMode=true;
+
+    canvas.on('mouse:up', function(options) {
+      console.log("Drawing Mode: On");
+      maintainState();  
+    });
   }
 
   function addPdf() {
@@ -151,67 +195,101 @@ function Canvas() {
     });
   }
 
-  //
-  // function maintainState()
-  // {
-  //   json = canvas.toJSON();
-  //   undo.push(json.objects[(json.objects.length)-1]);
-  //   redo = [];
-  // }
   
-  function doRedo() {
-    //redo pop undo push
-    if(redo.length>0) {
-    var popper = redo.pop();
-    undo.push(popper);
-  
-    fabric.util.enlivenObjects(undo, function(objects) {
-      var origRenderOnAddRemove = canvas.renderOnAddRemove;
-      canvas.renderOnAddRemove = false;
-   
-      objects.forEach(function(o) {
-         canvas.add(o);
-      });
-   
-      canvas.renderOnAddRemove = origRenderOnAddRemove;
-      canvas.renderAll();
-   });
-
-
-   console.log("Redo:",redo);
-   console.log("Undo:",undo);
-    }
-    else {
-      alert("You are not allowed to do Redo!")
-    }
-    //redo.pop();
-    //debugger;
+  function maintainState()
+  {
+    json = canvas.toJSON();
+    array.push(json.objects[(json.objects.length)-1]);
+    currentIndex++;
+    console.log("Array after Addition: ",array);
+    console.log("Current Index: ", currentIndex);
   }
 
-  function doUndo() {
-    //undo pop redo push
-    var popper1 = undo.pop();
-    redo.push(popper1);
+  // if(canvas)
+  // {
+  //   var isObjectMove = false;
+  //   canvas.on('object:moving',function(event) {
+  //     isObjectMove= true;
+  //   });
 
-    canvas.remove.apply(canvas, canvas.getObjects().concat());
+  // canvas.on('mouse:up', function(event){
+  //   if(isObjectMove) {
+  //     isObjectMove = false;
+  //     maintainState();
+  //   }
+  // });
+  // }
 
-    fabric.util.enlivenObjects(undo, function(objects) {
-      var origRenderOnAddRemove = canvas.renderOnAddRemove;
-      canvas.renderOnAddRemove = false;
+  const showPopover = () => (<MyPopover/>);
+  
+
+  function doRedo() {
+    if(count>0) {
+      console.log("Initial Value of Redo: ",currentIndex);
+
+        var printarray=[];
+        printarray.push(array[currentIndex+1]);
+       
+       console.log("Printing: ",printarray)
+       console.log("Array",array);
+
+     fabric.util.enlivenObjects(printarray, function(objects) {
+       var origRenderOnAddRemove = canvas.renderOnAddRemove;
+       canvas.renderOnAddRemove = false;
    
-      objects.forEach(function(o) {
-         canvas.add(o);
-      });
+       objects.forEach(function(o) {
+       canvas.add(o);
+       });
+       currentIndex++;
    
       canvas.renderOnAddRemove = origRenderOnAddRemove;
       canvas.renderAll();
+
+      count--;
+      console.log("Count:",count)
+
+    });
+  }
+    else {
+        alert("You are not allowed to do Redo!")
+      }
+}
+
+
+
+  function doUndo() {
+    if(count < 3 && count<array.length) {
+     canvas.remove.apply(canvas, canvas.getObjects().concat());
+     
+     var printarray=[];
+     for(var i=0;i<currentIndex;i++)
+     {
+        printarray.push(array[i]);
+      }
+      console.log("Printing: ",printarray)
+      console.log("Array",array);
+
+     fabric.util.enlivenObjects(printarray, function(objects) {
+      var origRenderOnAddRemove = canvas.renderOnAddRemove;
+      canvas.renderOnAddRemove = false;
+
+      console.log("objs",objects)
+      
+      objects.forEach(function(o) {
+         canvas.add(o);    
+      });
+      currentIndex--;
+   
+      canvas.renderOnAddRemove = origRenderOnAddRemove;
+      canvas.renderAll();
+      
    });
-
-   console.log("Undo:",undo);
-   console.log("Redo:",redo);
-
-    //undo.pop();
-    //debugger;
+      count++;
+      console.log("Count:",count)
+    }
+    else {
+      alert("You are not allowed to do Undo now!")
+    }
   }
 
 
@@ -288,8 +366,7 @@ function Canvas() {
 
             <IconButton size="small" edge="start" color="inherit" sx={{ mr: 110 }}>
               <PrintIcon onClick={addPdf}/>
-            </IconButton>       
-
+            </IconButton>   
 
             <IconButton size="small" edge="start" color="inherit" sx={{ mr: 0.5 }}>
               <Button variant="contained" color="success"> Save </Button>
@@ -298,10 +375,17 @@ function Canvas() {
             <IconButton size="small" edge="start" color="inherit" sx={{ mr: 0}}>
               <Button variant="contained"> Packages </Button>
             </IconButton>
+          
 
         </Toolbar>
       </AppBar>
+      
       <canvas id={"canvas"} />
+
+      <div id="mypopover">
+        {showPopover()}
+      </div>
+
     </div>
   )
 }

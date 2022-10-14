@@ -15,6 +15,13 @@
   /* margin-left: 60px; */
 }
 
+#mypopover {
+  position: relative;
+  float: left;
+  bottom: 550px;
+  left: 550px;
+}
+
 /* #packages {
   float: right;
   width: 20%;
