@@ -1,5 +1,5 @@
 import React from 'react'
-import { useEffect, useState, useRef } from 'react';
+import { useState } from 'react';
 import './style.css'
 
 import cvs from './cvs.jpg'
@@ -7,7 +7,7 @@ import { fabric } from 'fabric'
 import {useMount} from "./custom-hooks"
 import MyPopover from './MyPopover';
 
-import { AppBar,Toolbar, IconButton, Button, Popover } from '@mui/material';
+import { AppBar,Toolbar, IconButton, Button } from '@mui/material';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import UndoIcon from '@mui/icons-material/Undo';
@@ -24,33 +24,124 @@ import PrintIcon from '@mui/icons-material/Print';
 import html2canvas from "html2canvas";
 import jsPdf from "jspdf";
 
-import Typography from '@mui/material/Typography';
-
-import Popper from '@mui/material/Popper';
-import PopupState, { bindToggle, bindPopper } from 'material-ui-popup-state';
-import Fade from '@mui/material/Fade';
-import Paper from '@mui/material/Paper';
-
-// import { PanoramaPhotosphereRounded } from '@mui/icons-material';
-// import Popper, { PopperPlacementType } from '@mui/material/Popper';
-// import Typography from '@mui/material/Typography';
-// import Popover from '@mui/material/Popover';
-
-  
 
 function Canvas() {
   
   const  [canvas, setCanvas] = useState('');
+  const  [myoptions, setOptions] = useState('');
+  const  [popperstate, setpopperstate] = useState(false);
+
+  const  [drawstate, setdrawstate] = useState(false);
+  React.useEffect(()=>{
+    if(canvas) {
+      console.log("DrawState: ", drawstate);
+      const drawfunction =  function(options) {
+        maintainState();  
+      }
+      if(drawstate) {
+        canvas.isDrawingMode=true;
+        canvas.on('mouse:up',drawfunction)
+        console.log("Drawing Mode: On");
+      }
+      else {
+        canvas.isDrawingMode=false;
+        canvas.off('mouse:up')
+        console.log("Drawing Mode: Off");
+      }
+    }
+  },[drawstate]);
+
+
+  // React.useEffect(()=>{
+  //   if(canvas) {
+  //     const drawfunction =  function(options) {
+  //       maintainState();  
+  //     }
+  //     if(drawstate) {
+  //     canvas.on('mouse:up',drawfunction)
+  //     }
+  //     else {
+  //       canvas.off('mouse:up')
+  //     }
+  // }
+  // },[drawstate]);
+
+
+  const  [deletestate, setdeletestate] = useState(false);
+  React.useEffect(()=>{
+    if(canvas) {
+      console.log("DeleteState: ", deletestate);
+
+      const deletefunction =  function(options) {
+        console.log("Delete Active on: ",canvas.getActiveObject());
+        setpopperstate(popper=>false);
+        canvas.remove(canvas.getActiveObject());  
+      }
+
+      if(deletestate) {
+        canvas.isDrawingMode=false;
+        alert("Selected items will be deleted");
+        canvas.on('mouse:up',deletefunction)
+      }
+      else {
+        canvas.isDrawingMode=false;
+        console.log("Delete Activation: Off");
+        canvas.off('mouse:up')
+      }
+    }
+  },[deletestate]);
+
+  // React.useEffect(()=>{
+  //   if(canvas) {
+  //     const deletefunction =  function(options) {
+  //       console.log("Delete Active on: ",canvas.getActiveObject());
+  //       canvas.remove(canvas.getActiveObject());  
+  //     }
+  //     if(deletestate) {
+  //       console.log("I am if-delete useeffect")
+  //       canvas.on('mouse:up',deletefunction)
+  //     }
+  //     else {
+  //       console.log("I am else-delete useeffect")
+  //       canvas.off('mouse:up')
+  //     }
+  // }
+  // },[deletestate]);
+
+
+  // const  [deletestate, setdeletestate] = useState(false);
+  // React.useEffect(()=>{
+  //   if(canvas) {
+  //     if(deletestate) {
+  //       canvas.isDrawingMode=false;
+  //       alert("Selected items will be deleted");
+  //       canvas.on('mouse:up', function(options) {
+  //       console.log("Delete Active on: ",canvas.getActiveObject());
+  //       canvas.remove(canvas.getActiveObject());
+  //       });
+  //     }
+  //     else {
+  //       canvas.isDrawingMode=false;
+  //       console.log("Delete Active Off");
+  //     }
+  //   }
+  // },[deletestate]);
+
 
   // var redo =[];
   // var undo =[];
 
+  // const  [array, setarray] = useState([]);
+
   var array= [];
-  var currentIndex= -1;
+  // const  [array, setarray] = useState([]);
+  
+  var currentIndex = -1;
   var count=0;
   var json ='';
 
-  console.log("Initial Index: ", currentIndex);
+  console.log("Initial Index: ", currentIndex); 
+  console.log("Array: ", array); 
 
   // useEffect(() => {
   //     setCanvas(initCanvas);
@@ -77,10 +168,16 @@ function Canvas() {
       editable: true
     });
     canvas.add(textEditable);
+    setdrawstate(false);
+    setdeletestate(false);
 
     textEditable.on('mousedown', function(options) {
       console.log("Text Selected: ", options.target);
+
+      setOptions(myoptions=>options.target);
+      setpopperstate(popper=>!popper);
     });
+    console.log("check");
     maintainState();
   }
 
@@ -90,36 +187,44 @@ function Canvas() {
       top:100,
       left:100,
       radius: 50,
-      fill: 'black',
-      stroke: 'red',
+      fill: '#000000',
+      stroke: '#ff0000',
       strokeWidth: 2
   });
     canvas.add(circle);
+    setdrawstate(false);
+    setdeletestate(false);
+
     circle.on('mousedown', function(options) {
-      // adjustColor(circle.fill, circle.stroke);
-      showPopover();
+      setOptions(myoptions=>options.target);
+      setpopperstate(popper=>!popper);
+      console.log("Property Selected: ", options.target.fill);
       console.log("Circle Selected: ", options.target);
     });
-
     maintainState();
   }
+
 
   function addrectangle() {
     canvas.isDrawingMode=false;
     var rect = new fabric.Rect({
       left: 150,
       top: 100,
-      fill: 'red' ,
-      stroke: 'black',
+      fill: '#ff0000' ,
+      stroke: '#000000',
       width: 200,
-      height: 100
+      height: 100,
+      strokeWidth: 2
     });
     canvas.add(rect);
-    // console.log("color: ",rect.fill)
-    // console.log("stroke: ",rect.stroke)
+    setdrawstate(false);
+    setdeletestate(false);
 
     rect.on('mousedown', function(options) {
+      setpopperstate(popper=>!popper);
+      setOptions(myoptions=>options.target);
       console.log("Rectangle Selected: ", options.target);   
+      console.log("Rectangle Check: ", options.target.fill);   
     });
 
     // adjustColor();
@@ -130,13 +235,15 @@ function Canvas() {
   function addline() {
     canvas.isDrawingMode=false;
     var line = new fabric.Line([50, 10, 200, 150], {
-      stroke: 'green'
+    stroke: '#000000'
     });
     canvas.add(line);
+    setdrawstate(false);
+    setdeletestate(false);
 
     line.on('mousedown', function(options) {
-
-      console.log("Line Selected: ", options.target);
+      setpopperstate(popper=>!popper);
+      setOptions(myoptions=>options.target);
     });
 
     maintainState();
@@ -146,12 +253,16 @@ function Canvas() {
     canvas.isDrawingMode=false;
     canvas.setZoom(canvas.getZoom() * 1.1 );
     // canvas.zoomToPoint(new fabric.Point(canvas.width / 2, canvas.height / 2), canvas.getZoom() * 1.1);
+    setdrawstate(false);
+    setdeletestate(false);
   }
 
   function addZoomout() {
     canvas.isDrawingMode=false;
     canvas.setZoom(canvas.getZoom() / 1.1 );
     // canvas.zoomToPoint(new fabric.Point(canvas.width / 2, canvas.height / 2), canvas.getZoom() / 1.1);
+    setdrawstate(false);
+    setdeletestate(false);
   }
 
   function addDelete() {
@@ -160,6 +271,9 @@ function Canvas() {
     
     canvas.remove.apply(canvas, canvas.getObjects().concat());
 
+    setdrawstate(false);
+    setdeletestate(false);
+
     // setCanvas(initCanvas);
     // var json = canvas.toJSON();
     // canvas.clear();
@@ -167,23 +281,22 @@ function Canvas() {
   }
 
   function addSpecificDelete() {
-    canvas.isDrawingMode=false;
-    alert("Selected item will be deleted");
-    console.log("Delete Active on: ",canvas.getActiveObject());
-    canvas.remove(canvas.getActiveObject());
+    setdrawstate(false);
+
+    setdeletestate(deletestate=>!deletestate);
   }
 
 
   function addDrawing() {
-    canvas.isDrawingMode=true;
-
-    canvas.on('mouse:up', function(options) {
-      console.log("Drawing Mode: On");
-      maintainState();  
-    });
-  }
+    setdeletestate(false);
+    
+    setdrawstate(drawstate=>!drawstate);
+}
 
   function addPdf() {
+    setdrawstate(false);
+    setdeletestate(false);
+    
     alert('Exporting to print/pdf');
     const domElement = document.getElementById("canvas");
     html2canvas(domElement, {
@@ -198,6 +311,12 @@ function Canvas() {
   
   function maintainState()
   {
+    if (count!==0){
+      while (count!==0){
+        array.pop();
+        count--;
+      }
+    }
     json = canvas.toJSON();
     array.push(json.objects[(json.objects.length)-1]);
     currentIndex++;
@@ -220,8 +339,7 @@ function Canvas() {
   // });
   // }
 
-  const showPopover = () => (<MyPopover/>);
-  
+  const showPopover = () => (<MyPopover property={myoptions}/>);
 
   function doRedo() {
     if(count>0) {
@@ -256,7 +374,6 @@ function Canvas() {
 }
 
 
-
   function doUndo() {
     if(count < 3 && count<array.length) {
      canvas.remove.apply(canvas, canvas.getObjects().concat());
@@ -265,7 +382,7 @@ function Canvas() {
      for(var i=0;i<currentIndex;i++)
      {
         printarray.push(array[i]);
-      }
+     }
       console.log("Printing: ",printarray)
       console.log("Array",array);
 
@@ -374,17 +491,20 @@ function Canvas() {
 
             <IconButton size="small" edge="start" color="inherit" sx={{ mr: 0}}>
               <Button variant="contained"> Packages </Button>
-            </IconButton>
-          
+            </IconButton>     
 
         </Toolbar>
       </AppBar>
       
-      <canvas id={"canvas"} />
+    <canvas id={"canvas"} />
 
-      <div id="mypopover">
+    {popperstate &&
+    <>
+      <div>
         {showPopover()}
       </div>
+    </>
+    }
 
     </div>
   )

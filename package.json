@@ -15,6 +15,8 @@
     "jspdf": "^2.5.1",
     "material-ui-popup-state": "^4.1.0",
     "react": "^18.2.0",
+    "react-bootstrap": "^2.5.0",
+    "react-color-palette": "^6.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
