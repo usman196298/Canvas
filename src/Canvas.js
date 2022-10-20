@@ -52,21 +52,6 @@ function Canvas() {
   },[drawstate]);
 
 
-  // React.useEffect(()=>{
-  //   if(canvas) {
-  //     const drawfunction =  function(options) {
-  //       maintainState();  
-  //     }
-  //     if(drawstate) {
-  //     canvas.on('mouse:up',drawfunction)
-  //     }
-  //     else {
-  //       canvas.off('mouse:up')
-  //     }
-  // }
-  // },[drawstate]);
-
-
   const  [deletestate, setdeletestate] = useState(false);
   React.useEffect(()=>{
     if(canvas) {
@@ -91,47 +76,6 @@ function Canvas() {
     }
   },[deletestate]);
 
-  // React.useEffect(()=>{
-  //   if(canvas) {
-  //     const deletefunction =  function(options) {
-  //       console.log("Delete Active on: ",canvas.getActiveObject());
-  //       canvas.remove(canvas.getActiveObject());  
-  //     }
-  //     if(deletestate) {
-  //       console.log("I am if-delete useeffect")
-  //       canvas.on('mouse:up',deletefunction)
-  //     }
-  //     else {
-  //       console.log("I am else-delete useeffect")
-  //       canvas.off('mouse:up')
-  //     }
-  // }
-  // },[deletestate]);
-
-
-  // const  [deletestate, setdeletestate] = useState(false);
-  // React.useEffect(()=>{
-  //   if(canvas) {
-  //     if(deletestate) {
-  //       canvas.isDrawingMode=false;
-  //       alert("Selected items will be deleted");
-  //       canvas.on('mouse:up', function(options) {
-  //       console.log("Delete Active on: ",canvas.getActiveObject());
-  //       canvas.remove(canvas.getActiveObject());
-  //       });
-  //     }
-  //     else {
-  //       canvas.isDrawingMode=false;
-  //       console.log("Delete Active Off");
-  //     }
-  //   }
-  // },[deletestate]);
-
-
-  // var redo =[];
-  // var undo =[];
-
-  // const  [array, setarray] = useState([]);
 
   var array= [];
   // const  [array, setarray] = useState([]);
@@ -143,10 +87,6 @@ function Canvas() {
   console.log("Initial Index: ", currentIndex); 
   console.log("Array: ", array); 
 
-  // useEffect(() => {
-  //     setCanvas(initCanvas);
-  // },[])
-  
 
   // To stop double rendering
   useMount(()=>{
@@ -227,8 +167,6 @@ function Canvas() {
       console.log("Rectangle Check: ", options.target.fill);   
     });
 
-    // adjustColor();
-
     maintainState();
   }
 
@@ -252,7 +190,6 @@ function Canvas() {
   function addZoomin() {
     canvas.isDrawingMode=false;
     canvas.setZoom(canvas.getZoom() * 1.1 );
-    // canvas.zoomToPoint(new fabric.Point(canvas.width / 2, canvas.height / 2), canvas.getZoom() * 1.1);
     setdrawstate(false);
     setdeletestate(false);
   }
@@ -260,7 +197,6 @@ function Canvas() {
   function addZoomout() {
     canvas.isDrawingMode=false;
     canvas.setZoom(canvas.getZoom() / 1.1 );
-    // canvas.zoomToPoint(new fabric.Point(canvas.width / 2, canvas.height / 2), canvas.getZoom() / 1.1);
     setdrawstate(false);
     setdeletestate(false);
   }
@@ -274,10 +210,6 @@ function Canvas() {
     setdrawstate(false);
     setdeletestate(false);
 
-    // setCanvas(initCanvas);
-    // var json = canvas.toJSON();
-    // canvas.clear();
-    // canvas.loadFromJSON(json, canvas.renderAll.bind(canvas));
   }
 
   function addSpecificDelete() {
@@ -296,7 +228,7 @@ function Canvas() {
   function addPdf() {
     setdrawstate(false);
     setdeletestate(false);
-    
+
     alert('Exporting to print/pdf');
     const domElement = document.getElementById("canvas");
     html2canvas(domElement, {
@@ -324,20 +256,6 @@ function Canvas() {
     console.log("Current Index: ", currentIndex);
   }
 
-  // if(canvas)
-  // {
-  //   var isObjectMove = false;
-  //   canvas.on('object:moving',function(event) {
-  //     isObjectMove= true;
-  //   });
-
-  // canvas.on('mouse:up', function(event){
-  //   if(isObjectMove) {
-  //     isObjectMove = false;
-  //     maintainState();
-  //   }
-  // });
-  // }
 
   const showPopover = () => (<MyPopover property={myoptions}/>);
 
@@ -509,5 +427,4 @@ function Canvas() {
     </div>
   )
 }
-
 export default Canvas
