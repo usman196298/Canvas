@@ -1,12 +1,12 @@
-import Card from 'react-bootstrap/Card';
-import ListGroup from 'react-bootstrap/ListGroup';
-import "react-color-palette/lib/css/styles.css";
 import * as React from 'react';
+import { Card ,ListGroup } from 'react-bootstrap';
+import "react-color-palette/lib/css/styles.css";
 import Slider from '@mui/material/Slider';
 
-
 function Popper(props) {
-  
+
+  console.log("Show : ", props.property.type);
+
  var colorch=props.property.fill;
  var fill=colorch.substring(0,7);
  var opacityyy=colorch.substring(7,9);
@@ -14,9 +14,9 @@ function Popper(props) {
  if (!k){
   k=254;
  }
-  const [color, setcolor] = React.useState(fill);
-  const [stroke, setstroke] = React.useState(props.property.stroke);
-  const [opacity, setopacity] = React.useState(k);
+  const [color, setColor] = React.useState(fill);
+  const [stroke, setStroke] = React.useState(props.property.stroke);
+  const [opacity, setOpacity] = React.useState(k);
 
   const convertHexToRGBA = (hexCode, opacity = 1) => {
     let hex = hexCode.replace('#', '');
@@ -44,9 +44,7 @@ function Popper(props) {
       g = parseInt(trim(inParts[1]), 10),
       b = parseInt(trim(inParts[2]), 10),
      a = parseFloat(trim(inParts[3].substring(0, inParts[3].length - 1))).toFixed(1);
-    //  console.log("opacity fun",a);
      var n=a*100;
-    //  console.log('n',n);
      var outParts = [
       r.toString(16),
       g.toString(16),
@@ -62,34 +60,32 @@ function Popper(props) {
     return ('#' + outParts.join(''));
   }
 
-  function setmethod(colorobj, opacityobj) {
+  function setMethod(colorobj, opacityobj) {
     var tostring = colorobj.toString();
     var newcol = convertHexToRGBA(tostring, opacityobj)
     var ans= rgbaToHex(newcol)
     props.property.set({ "fill": (ans) });
   }
   React.useEffect(()=>{
-    setmethod(color, (opacity));
+    setMethod(color, (opacity));
     props.property.canvas.renderAll();
   },[color])
   function handleChangeColor(event) {
-    setcolor(event.target.value);
-    // props.selected.canvas.renderAll();
-// props.selected.set({ "fill": (color) });
+    setColor(event.target.value);
   }
 
   function handleChangeStroke(event) {
-    setstroke(event.target.value);
+    setStroke(event.target.value);
     props.property.set({ "stroke": stroke });
     props.property.canvas.renderAll();
   }
 
   function handleChangeOpacity(event) {
-    console.log("props",props.property.fill);
-    setcolor(color);
+    // console.log("props",props.property.fill);
+    setColor(color);
     var a=((event.target.value));
-    setopacity(a);
-    setmethod(color, (opacity/255));
+    setOpacity(a);
+    setMethod(color, (opacity/255));
     props.property.canvas.renderAll();
   }
 
@@ -97,17 +93,18 @@ function Popper(props) {
   return (
     <Card className='pops' >
       <div>
-        <ListGroup style={{
+        <div style={{
           backgroundColor: 'white', width: '14rem', top: props.property.top + "px",
-          left: props.property.left + props.property.width + 70 + 'px', position: "absolute"
-        }}
+          left: props.property.left + props.property.width + 70 + 'px', position: "absolute"}}
           variant="flush"> <br></br>
+
+          { props.property.type!="line" &&
+          <>
           <label>Color:</label> <br></br>
-          <ListGroup.Item><input style={{ width: 200 }} type="color"
+          <div><input style={{ width: 200 }} type="color"
             onChange={handleChangeColor}
-            id="favcolor" name="favcolor" value={color} ></input></ListGroup.Item> <br></br>
-          {/* {console.log("input")} */}
-          Opacity:<br></br>
+            id="favcolor" name="favcolor" value={color} ></input></div> <br></br>
+            Opacity:<br></br>
           <Slider sx={{ maxWidth: 200 }}
             aria-label="Opacity"
             // defaultValue={opacity}
@@ -118,12 +115,16 @@ function Popper(props) {
             color="primary"
           />
           <br></br>
+          </>
+          }
+
+
           <label>Stroke:</label>
-          <ListGroup.Item> <input style={{ width: 200 }} type="color"
+          <div> <input style={{ width: 200 }} type="color"
             onChange={handleChangeStroke}
-            id="favcolor" name="favcolor" value={stroke} ></input></ListGroup.Item>
+            id="favcolor" name="favcolor" value={stroke} ></input></div>
             <br></br>
-        </ListGroup>
+        </div>
         
       </div>
       <br></br>

@@ -1,46 +1,45 @@
-import React from 'react'
-import { useState } from 'react';
-import './style.css'
-
+import React, { useState } from 'react'
 import cvs from './cvs.jpg'
 import { fabric } from 'fabric'
-import {useMount} from "./custom-hooks"
+import { useMount } from "./custom-hooks"
 import MyPopover from './MyPopover';
-
-import { AppBar,Toolbar, IconButton, Button } from '@mui/material';
-import ZoomInIcon from '@mui/icons-material/ZoomIn';
-import ZoomOutIcon from '@mui/icons-material/ZoomOut';
-import UndoIcon from '@mui/icons-material/Undo';
-import RedoIcon from '@mui/icons-material/Redo';
-import AbcIcon from '@mui/icons-material/Abc';
-import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
-import CircleOutlinedIcon from '@mui/icons-material/CircleOutlined';
-import RectangleOutlinedIcon from '@mui/icons-material/RectangleOutlined';
-import CreateIcon from '@mui/icons-material/Create';
-import LoyaltyIcon from '@mui/icons-material/Loyalty';
-import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import PrintIcon from '@mui/icons-material/Print';
+import PackagePopover from './PackagePopover';
+import { AppBar,Toolbar, IconButton, Button, Grid } from '@mui/material';
+import icons from "./components/icons"
 import html2canvas from "html2canvas";
 import jsPdf from "jspdf";
+import './style.css'
 
 
 function Canvas() {
   
   const  [canvas, setCanvas] = useState('');
   const  [myoptions, setOptions] = useState('');
-  const  [popperstate, setpopperstate] = useState(false);
+  const  [popperstate, setPopperstate] = useState(false);
 
-  const  [drawstate, setdrawstate] = useState(false);
+
+  const  [drawstate, setDrawstate] = useState(false);
   React.useEffect(()=>{
     if(canvas) {
       console.log("DrawState: ", drawstate);
-      const drawfunction =  function(options) {
+      const drawFunction =  function(options) {
         maintainState();  
       }
+      
+      const selectDraw = function(options) {
+      canvas.on('mouse:down', function(options) {
+        if(options.type='path') {
+          console.log("Draw: ", options.target);
+          // setOptions(myoptions=>options.target);
+          // setPopperstate(popper=>true);
+        }
+      });
+      }
+      
       if(drawstate) {
         canvas.isDrawingMode=true;
-        canvas.on('mouse:up',drawfunction)
+        canvas.on('mouse:up',drawFunction)
+        canvas.on('mouse:down',selectDraw)
         console.log("Drawing Mode: On");
       }
       else {
@@ -51,22 +50,31 @@ function Canvas() {
     }
   },[drawstate]);
 
+// Popper Off on canvas click 
+  React.useEffect(()=>{
+    if(canvas) { 
+    canvas.on('mouse:down', function(options) {
+      setPopperstate(popper=>false);
+    });
+    }
+  },[canvas]);
 
-  const  [deletestate, setdeletestate] = useState(false);
+
+  const  [deletestate, setDeletestate] = useState(false);
   React.useEffect(()=>{
     if(canvas) {
       console.log("DeleteState: ", deletestate);
 
-      const deletefunction =  function(options) {
+      const deleteFunction =  function(options) {
         console.log("Delete Active on: ",canvas.getActiveObject());
-        setpopperstate(popper=>false);
+        setPopperstate(popper=>false);
         canvas.remove(canvas.getActiveObject());  
       }
 
       if(deletestate) {
         canvas.isDrawingMode=false;
         alert("Selected items will be deleted");
-        canvas.on('mouse:up',deletefunction)
+        canvas.on('mouse:up',deleteFunction)
       }
       else {
         canvas.isDrawingMode=false;
@@ -100,28 +108,31 @@ function Canvas() {
     });
 
     
-  function addtext(){
+  function addText(){
     canvas.isDrawingMode=false;
     var textEditable = new fabric.Textbox(
       'Editable Textbox', {
-      width: 500,
+      width: 300,
+      fill: "000000",
+      opacity: "1",
+      stroke: "#000000",
       editable: true
     });
     canvas.add(textEditable);
-    setdrawstate(false);
-    setdeletestate(false);
+    setDrawstate(false);
+    setDeletestate(false);
 
     textEditable.on('mousedown', function(options) {
       console.log("Text Selected: ", options.target);
 
       setOptions(myoptions=>options.target);
-      setpopperstate(popper=>!popper);
+      setPopperstate(popper=>true);
     });
     console.log("check");
     maintainState();
   }
 
-  function addcircle() {
+  function addCircle() {
     canvas.isDrawingMode=false;
     var circle = new fabric.Circle({
       top:100,
@@ -132,12 +143,12 @@ function Canvas() {
       strokeWidth: 2
   });
     canvas.add(circle);
-    setdrawstate(false);
-    setdeletestate(false);
+    setDrawstate(false);
+    setDeletestate(false);
 
     circle.on('mousedown', function(options) {
       setOptions(myoptions=>options.target);
-      setpopperstate(popper=>!popper);
+      setPopperstate(popper=>true);
       console.log("Property Selected: ", options.target.fill);
       console.log("Circle Selected: ", options.target);
     });
@@ -145,7 +156,7 @@ function Canvas() {
   }
 
 
-  function addrectangle() {
+  function addRectangle() {
     canvas.isDrawingMode=false;
     var rect = new fabric.Rect({
       left: 150,
@@ -157,11 +168,11 @@ function Canvas() {
       strokeWidth: 2
     });
     canvas.add(rect);
-    setdrawstate(false);
-    setdeletestate(false);
+    setDrawstate(false);
+    setDeletestate(false);
 
     rect.on('mousedown', function(options) {
-      setpopperstate(popper=>!popper);
+      setPopperstate(popper=>true);
       setOptions(myoptions=>options.target);
       console.log("Rectangle Selected: ", options.target);   
       console.log("Rectangle Check: ", options.target.fill);   
@@ -170,35 +181,44 @@ function Canvas() {
     maintainState();
   }
 
-  function addline() {
+  function addLine() {
     canvas.isDrawingMode=false;
     var line = new fabric.Line([50, 10, 200, 150], {
     stroke: '#000000'
     });
     canvas.add(line);
-    setdrawstate(false);
-    setdeletestate(false);
+    setDrawstate(false);
+    setDeletestate(false);
 
     line.on('mousedown', function(options) {
-      setpopperstate(popper=>!popper);
+      setPopperstate(popper=>true);
       setOptions(myoptions=>options.target);
     });
 
     maintainState();
   }
 
-  function addZoomin() {
-    canvas.isDrawingMode=false;
-    canvas.setZoom(canvas.getZoom() * 1.1 );
-    setdrawstate(false);
-    setdeletestate(false);
-  }
-
-  function addZoomout() {
-    canvas.isDrawingMode=false;
-    canvas.setZoom(canvas.getZoom() / 1.1 );
-    setdrawstate(false);
-    setdeletestate(false);
+  function addZoom(params){
+    if(params == 1) {
+      canvas.isDrawingMode=false;
+      if (canvas.getZoom().toFixed(5) > 2) {
+        alert("Zoom in: Limit Reached")
+        return;
+      }
+      canvas.setZoom(canvas.getZoom() * 1.1 );
+      setDrawstate(false);
+      setDeletestate(false);
+    }
+    else{
+      canvas.isDrawingMode=false;
+      if (canvas.getZoom().toFixed(5) <= 0.5) {
+        alert("Zoom out: limit reached")
+        return;
+      }
+      canvas.setZoom(canvas.getZoom() / 1.1 );
+      setDrawstate(false);
+      setDeletestate(false);
+    }
   }
 
   function addDelete() {
@@ -207,27 +227,25 @@ function Canvas() {
     
     canvas.remove.apply(canvas, canvas.getObjects().concat());
 
-    setdrawstate(false);
-    setdeletestate(false);
-
+    setDrawstate(false);
+    setDeletestate(false);
   }
 
   function addSpecificDelete() {
-    setdrawstate(false);
-
-    setdeletestate(deletestate=>!deletestate);
+    setDrawstate(false);
+    setDeletestate(deletestate=>!deletestate);
   }
 
 
   function addDrawing() {
-    setdeletestate(false);
-    
-    setdrawstate(drawstate=>!drawstate);
+    setDeletestate(false);
+    setDrawstate(drawstate=>!drawstate);
 }
 
+
   function addPdf() {
-    setdrawstate(false);
-    setdeletestate(false);
+    setDrawstate(false);
+    setDeletestate(false);
 
     alert('Exporting to print/pdf');
     const domElement = document.getElementById("canvas");
@@ -257,7 +275,10 @@ function Canvas() {
   }
 
 
-  const showPopover = () => (<MyPopover property={myoptions}/>);
+  const  [Packagepopper, setPackagepopper] = useState(false);
+  function addPackage() {
+    setPackagepopper(Packagepopper=>!Packagepopper);
+  }
 
   function doRedo() {
     if(count>0) {
@@ -330,101 +351,58 @@ function Canvas() {
 
   return (
     <div>
-      <AppBar position="static" id="navbar">
-        <Toolbar>
-            <IconButton size="small" edge="start" color="inherit" sx={{ mr: 1 }}>
-              <ZoomInIcon onClick={addZoomin}/>
-            </IconButton>
+      <Grid id="navbar">
+        
+        <Grid id="navbar-items">
+          <icons.ZoomInIcon onClick={event=>addZoom(1)} className="icon-buttons"/>
+          <icons.ZoomOutIcon onClick={event=>addZoom(0)} className="icon-buttons"/>
+          <div id="divider"/>
+          <icons.UndoIcon onClick={doUndo} className="icon-buttons"/>
+          <icons.RedoIcon onClick={doRedo} className="icon-buttons"/>
+          <div id="divider"/>
+          <icons.AbcIcon onClick={addText} className="icon-buttons"/>
+          <icons.HorizontalRuleIcon onClick={addLine} className="icon-buttons"/>
+          <icons.CircleOutlinedIcon onClick={addCircle} className="icon-buttons"/>
+          <icons.RectangleOutlinedIcon onClick={addRectangle} className="icon-buttons"/>
+          <div id="divider"/>
+          <icons.CreateIcon onClick={addDrawing} className="icon-buttons"/>
+          <icons.LoyaltyIcon onClick={addSpecificDelete} className="icon-buttons"/>
+          <icons.DeleteOutlinedIcon onClick={addDelete} className="icon-buttons"/>
+          <div id="divider"/>
+          <icons.OpenInNewIcon onClick={addPdf} className="icon-buttons"/>
+          <icons.PrintIcon onClick={addPdf}/>
+        </Grid>
 
-            <IconButton size="small" edge="start" color="inherit" sx={{ mr: 1 }}>
-              <ZoomOutIcon onClick={addZoomout}/>
-            </IconButton>
+        <Grid style={{display: "flex"}}>
+          <Button variant="contained" color="success"> Save </Button>
+          <Button id="button-packages" variant="contained" onClick={addPackage}> Packages </Button>
+        </Grid>
 
-            <div id="divider">
-            <IconButton size="small" edge="start" color="inherit" sx={{ mr: 1 }}></IconButton>
-            </div>
+      </Grid>
+    
+       <Grid style={{display:"flex"}}>
+        <Grid style={{width:'100%', overflow:"auto"}} >
+          <canvas id={"canvas"} />
+        </Grid>
 
-            <IconButton size="small" edge="start" color="inherit" sx={{ mr: 1, ml: 2  }}>
-              <UndoIcon onClick={doUndo}/>
-            </IconButton>
+        {Packagepopper &&
+          <Grid style={{marginRight:"10px", marginTop:"20px"}}> 
+            {/* <PackagePopover property={setPackagepopper}/> */}
+            <PackagePopover property={canvas}/>
+          </Grid>
+        }
+      </Grid>
 
-            <IconButton size="small" edge="start" color="inherit" sx={{ mr: 2 }}>
-              <RedoIcon onClick={doRedo}/>
-            </IconButton>
+      {popperstate &&
+      <>
+        <div>
+          <MyPopover property={myoptions}/>
+        </div>
+      </>
+      } 
 
-            <div id="divider">
-            <IconButton size="small" edge="start" color="inherit" sx={{ mr: 1 }}></IconButton>
-            </div>
-
-
-            <IconButton size="small" edge="start" color="inherit" sx={{ mr: 1, ml: 2 }}>
-              <AbcIcon onClick={addtext}/>
-            </IconButton>
-
-            <IconButton size="small" edge="start" color="inherit" sx={{ mr: 1 }}>
-              <HorizontalRuleIcon onClick={addline}/>
-            </IconButton>
-
-            <IconButton size="small" edge="start" color="inherit" sx={{ mr: 1 }}>
-              <CircleOutlinedIcon onClick={addcircle}/>
-            </IconButton>
-
-            <IconButton size="small" edge="start" color="inherit" sx={{ mr: 2 }}>
-              <RectangleOutlinedIcon onClick={addrectangle}/>
-            </IconButton>
-
-            <div id="divider">
-            <IconButton size="small" edge="start" color="inherit" sx={{ mr: 1 }}></IconButton>
-            </div>
-
-
-            <IconButton size="small" edge="start" color="inherit" sx={{ mr: 1, ml: 2 }}>
-              <CreateIcon onClick={addDrawing}/>
-            </IconButton>
-
-            <IconButton size="small" edge="start" color="inherit" sx={{ mr: 1 }}>
-              <LoyaltyIcon onClick={addSpecificDelete}/>
-            </IconButton>
-
-            <IconButton size="small" edge="start" color="inherit" sx={{ mr: 2 }}>
-              <DeleteOutlinedIcon onClick={addDelete}/>
-            </IconButton>
-
-            <div id="divider">
-            <IconButton size="small" edge="start" color="inherit" sx={{ mr: 1 }}></IconButton>
-            </div>
-
-
-            <IconButton size="small" edge="start" color="inherit" sx={{ mr: 1, ml: 2 }}>
-              <OpenInNewIcon onClick={addPdf}/>
-            </IconButton>            
-
-            <IconButton size="small" edge="start" color="inherit" sx={{ mr: 110 }}>
-              <PrintIcon onClick={addPdf}/>
-            </IconButton>   
-
-            <IconButton size="small" edge="start" color="inherit" sx={{ mr: 0.5 }}>
-              <Button variant="contained" color="success"> Save </Button>
-            </IconButton>   
-
-            <IconButton size="small" edge="start" color="inherit" sx={{ mr: 0}}>
-              <Button variant="contained"> Packages </Button>
-            </IconButton>     
-
-        </Toolbar>
-      </AppBar>
-      
-    <canvas id={"canvas"} />
-
-    {popperstate &&
-    <>
-      <div>
-        {showPopover()}
-      </div>
-    </>
-    }
-
-    </div>
+  </div>
   )
 }
+
 export default Canvas
